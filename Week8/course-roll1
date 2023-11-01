@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+
+# The following Python script produces a list of students 
+# enrolled in that course for a given term
+# The output should be ordered by family name, then first name
+
+# Additional checks
+# - Invalid subject
+# - Invalid term
+# - Subject not offered in term
+# - Print long name of course
+
+import sys
+import psycopg2
+
+if len(sys.argv) != 3:
+    print("Usage: course-roll subject term")
+    exit(1)
+
+subject = sys.argv[1]
+term = sys.argv[2]
+
+valid_subject_query = '''
+select longname
+from Subjects
+where code = %s
+'''
+
+valid_term_query = '''
+select id
+from Terms
+where code = %s
+'''
+
+main_query = '''
+    select p.id, p.family, p.given
+    from People p
+        join Course_enrolments e on (e.student = p.id)
+        join Courses c on (c.id = e.course)
+        join Subjects s on (s.id = c.subject)
+        join Terms t on (t.id = c.term)
+    where t.code = %s and s.code = %s
+    order by p.family, p.given
+'''
+
+try:
+    conn = psycopg2.connect("dbname=uni")
+    cur = conn.cursor()
+    
+    # Check for valid subject
+    cur.execute(valid_subject_query, [subject])
+    subject_longname = cur.fetchone()
+
+    if subject_longname is None:
+        print(f"Invalid subject {subject}")
+        exit(1)
+    
+    # Check for valid term
+    cur.execute(valid_term_query, [term])
+    res_term = cur.fetchone()
+
+    if res_term is None:
+        print(f"Invalid term {term}")
+        exit(1)
+    
+    # Check for offering
+    cur.execute(main_query, [term, subject])
+    res = cur.fetchall()
+    if not res:
+        print(f"No offering: {subject} {term}")
+    else:
+        print(subject, term, subject_longname[0])
+        for id, last, first in res:
+            print(f"{id} {last}, {first}")
+
+except psycopg2.Error as err:
+    print("database error: ", err)
+finally:
+    if conn is not None:
+        conn.close()

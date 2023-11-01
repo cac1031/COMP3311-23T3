@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+
+# The following Python script produces a list of students enrolled
+# in that course for a given term
+# The output should be ordered by family name, then first name
+# A message of 'No such students' should be printed if no students are
+# studying that particular course in the given term
+
+import sys
+import psycopg2
+
+if len(sys.argv) != 3:
+    print("Usage: ./course-roll subject term")
+    exit(1)
+
+subject = sys.argv[1]
+term = sys.argv[2]
+conn = None
+
+
+# TODO: fill this query in
+query = '''
+select p.id, p.family, p.given
+from People p
+    join Course_enrolments e on (p.id = e.student)
+    join Courses c on (c.id = e.course)
+    join Subjects su on (su.id = c.subject)
+    join Terms t on (t.id = c.term)
+where t.code = %s and su.code = %s
+order by p.family, p.given
+'''
+
+try:
+    conn = psycopg2.connect(f"dbname=uni")
+    cur = conn.cursor()
+    cur.execute(query, [term, subject])
+
+    res = cur.fetchall()
+
+    print(f"{subject} {term}")
+    if not res:
+        print('No students')
+    else:
+        for id, family, given in res:
+            print(f"{id} {family}, {given}")
+    
+
+except psycopg2.Error as err:
+    print("database error: ", err)
+
+finally:
+    if conn is not None:
+        conn.close()

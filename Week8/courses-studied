@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+
+# The following Python script prints the subjects that a specified student 
+# studied in a given term. 
+# There is no need to check whether the student was enrolled in the given term; 
+# simply print that they studied no courses in that term.
+
+import sys
+import psycopg2
+
+if len(sys.argv) != 3:
+    print("Usage: ./courses-studied studentID term")
+    exit(1)
+student_id = sys.argv[1]
+term = sys.argv[2]
+conn = None
+
+query = '''
+select s.code, s.name
+from People p
+    join Course_enrolments e on (p.id = e.student)
+    join Courses c on (c.id = e.course)
+    join Terms t on (c.term = t.id)
+    join Subjects s on (s.id = c.subject)
+where p.id = %s and t.code = %s 
+order by s.code
+'''
+
+try:
+    conn = psycopg2.connect(f"dbname=uni")
+    cur = conn.cursor()
+    cur.execute(query, [student_id, term])
+
+    res = cur.fetchall()
+
+    if not res:
+        print('No such student')
+    else:
+        for code, name in res:
+            print(f"{code} {name}")
+
+except psycopg2.Error as err:
+    print("database error: ", err)
+
+finally:
+    if conn is not None:
+        conn.close()

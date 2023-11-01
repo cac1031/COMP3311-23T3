@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+
+# The following Python script takes in a name(full/partial) of a School
+# and prints number of subjects offered by that school
+# Do case insensitive matching
+import sys
+import psycopg2
+
+if len(sys.argv) != 2:
+    print("Usage: nsubjects school")
+    exit(1)
+
+school_pattern = sys.argv[1]
+conn = None
+
+# In order to use the wildcard % in the query, we have to escape it with another %
+school_pattern_match_query = '''
+select longname
+from Orgunits
+where longname ilike '%%' || %s || '%%'
+'''
+
+num_subjects_query = '''
+select count(s.code)
+from Subjects s
+    join OrgUnits o on (o.id = s.offeredby)
+where o.longname ~* %s
+'''
+
+try:
+    conn = psycopg2.connect(f"dbname=uni")
+    cur = conn.cursor()
+    cur.execute(school_pattern_match_query, [school_pattern])
+
+    res = cur.fetchall()
+    
+    if not res:
+        print('No school matches this pattern')
+        exit(0)
+
+    if (len(res) > 1):
+        print('Multiple schools match:')
+        for longname in res:
+            print(longname[0])
+    else:
+        cur.execute(num_subjects_query, [school_pattern])
+        num_subjects = cur.fetchone()[0]
+        
+        for longname in res:
+            print(f"{longname[0]} teaches {num_subjects} subjects")
+
+
+except psycopg2.Error as err:
+    print("database error: ", err)
+finally:
+    if conn is not None:
+        conn.close()
