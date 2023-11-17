@@ -11,7 +11,8 @@ Operation[operands](Table)
 
 **Rename**
 ```
-Res = Rename[Res(A,B,C)](R)
+Res = Rename[Res(A,B,C)](R)     -- syntax 1
+Res(A,B,C) = R                  -- syntax 2
 ```
 - Res = new table name
 - (A,B,C) = names of new attributes
@@ -80,6 +81,7 @@ R / S
 R Div S
 ```
 Used when we want to find entities that are interacting with *all* entities of another set
+![Division Example](division.png)
 <br><br>
 
 # Transaction Processing

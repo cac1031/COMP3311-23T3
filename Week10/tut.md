@@ -260,7 +260,6 @@ part   cost
 ----------------------------------
 300        10      100       20
 300        10      200       20
-300        10      300       10
 
 ## Then, we project only the 1.part column
 part [This is Table 1]
@@ -343,7 +342,6 @@ T2:      R(Y)      R(X)
         T2:           R(Y) R(X) 
        ```
     - The concurrent schedule is view equivalent to T1;T2. Therefore it is view serializable
-
 
 **c.**
 ```
